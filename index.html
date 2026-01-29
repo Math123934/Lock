@@ -15,7 +15,7 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            touch-action: manipulation;
+            touch-action: pan-y;
         }
 
         html {
@@ -30,10 +30,12 @@
             min-height: 100vh;
             min-height: -webkit-fill-available;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-            overflow-y: auto;
             overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            padding: 0;
+            margin: 0;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
         /* iOS Navigation Bar */
@@ -59,14 +61,26 @@
             color: #fff;
         }
 
+        /* Scrollable Container */
+        .scroll-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-top: 44px;
+            padding-bottom: 120px;
+        }
+
         /* Main Content Container */
         .screen-time-container {
             max-width: 500px;
             margin: 0 auto;
             padding: 20px;
-            padding-top: 44px;
-            padding-bottom: 100px;
-            min-height: 100vh;
+            padding-bottom: 40px;
         }
 
         /* Screen Time Header */
@@ -275,15 +289,22 @@
             font-weight: 700;
         }
 
-        /* Action Buttons */
+        /* Action Buttons - Fixed at Bottom */
         .action-buttons {
             display: flex;
             gap: 15px;
-            margin-top: 30px;
-            animation: fadeInUp 1.2s ease-out 0.6s both;
-            position: sticky;
-            bottom: 20px;
+            padding: 20px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeInUp 1.2s ease-out 0.6s both;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
 
         .action-btn {
@@ -355,14 +376,21 @@
 
         /* iOS Safe Area Adjustments */
         @supports(padding: max(0px)) {
+            .scroll-container {
+                padding-top: max(44px, env(safe-area-inset-top) + 44px);
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+            }
+            
             .screen-time-container {
-                padding-left: max(20px, env(safe-area-inset-left));
-                padding-right: max(20px, env(safe-area-inset-right));
-                padding-bottom: max(100px, env(safe-area-inset-bottom) + 100px);
+                padding-left: max(20px, env(safe-area-inset-left) + 20px);
+                padding-right: max(20px, env(safe-area-inset-right) + 20px);
             }
             
             .action-buttons {
-                bottom: max(20px, env(safe-area-inset-bottom) + 20px);
+                padding-left: max(20px, env(safe-area-inset-left) + 20px);
+                padding-right: max(20px, env(safe-area-inset-right) + 20px);
+                padding-bottom: max(20px, env(safe-area-inset-bottom) + 20px);
             }
         }
 
@@ -380,6 +408,11 @@
             .screen-time-title {
                 font-size: 26px;
             }
+            
+            .action-btn {
+                padding: 18px;
+                font-size: 16px;
+            }
         }
 
         @media (max-width: 320px) {
@@ -391,13 +424,17 @@
                 padding-left: 16px;
                 padding-right: 16px;
             }
+            
+            .action-btn {
+                padding: 16px;
+                font-size: 15px;
+            }
         }
 
         /* Landscape Mode */
         @media (orientation: landscape) {
             .screen-time-container {
                 max-width: 90%;
-                padding-top: 60px;
             }
             
             .lock-text {
@@ -409,10 +446,8 @@
                 margin-bottom: 15px;
             }
             
-            .action-buttons {
-                position: relative;
-                bottom: 0;
-                margin-top: 20px;
+            .scroll-container {
+                padding-top: max(44px, env(safe-area-inset-top) + 44px);
             }
         }
 
@@ -431,6 +466,14 @@
             50% { transform: scale(0.98); }
             100% { transform: scale(1); }
         }
+
+        /* Ensure content doesn't get hidden behind buttons */
+        .scroll-container::after {
+            content: '';
+            display: block;
+            height: 120px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -439,78 +482,84 @@
         <div class="ios-time" id="currentTime">9:41</div>
     </div>
 
-    <!-- Main Content -->
-    <div class="screen-time-container">
-        <!-- Screen Time Header -->
-        <div class="screen-time-header">
-            <div class="screen-time-icon">
-                <i class="fas fa-hourglass-half"></i>
+    <!-- Scrollable Content Area -->
+    <div class="scroll-container">
+        <!-- Main Content -->
+        <div class="screen-time-container">
+            <!-- Screen Time Header -->
+            <div class="screen-time-header">
+                <div class="screen-time-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="screen-time-title">Screen Time</div>
+                <div style="font-size: 18px; color: #8e8e93;">Locked</div>
             </div>
-            <div class="screen-time-title">Screen Time</div>
-            <div style="font-size: 18px; color: #8e8e93;">Locked</div>
-        </div>
 
-        <!-- Lock Message -->
-        <div class="main-lock-message">
-            <div class="lock-icon-large">
-                <i class="fas fa-lock"></i>
+            <!-- Lock Message -->
+            <div class="main-lock-message">
+                <div class="lock-icon-large">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="lock-text">iPhone Locked</div>
+                <div class="locked-by-text">This phone is locked by <span style="color: #5ac8fa; font-weight: 700;">Wenrui Zhang</span></div>
             </div>
-            <div class="lock-text">iPhone Locked</div>
-            <div class="locked-by-text">This phone is locked by <span style="color: #5ac8fa; font-weight: 700;">Wenrui Zhang</span></div>
-        </div>
 
-        <!-- Unlock Instructions -->
-        <div class="unlock-instructions">
-            <div class="instructions-title">
-                <i class="fas fa-info-circle"></i> How to Unlock This Device
+            <!-- Unlock Instructions -->
+            <div class="unlock-instructions">
+                <div class="instructions-title">
+                    <i class="fas fa-info-circle"></i> How to Unlock This Device
+                </div>
+                <div class="instructions-text">
+                    This iPhone is locked with Screen Time restrictions. To unlock, you must complete <span style="color: #5ac8fa; font-weight: 700;">ONE</span> of the following options:
+                </div>
+                
+                <!-- Unlock Options -->
+                <div class="unlock-options">
+                    <div class="option option-1" id="option1">
+                        <div class="option-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="option-content">
+                            <div class="option-text">Play The Strongest Battlegrounds</div>
+                            <div class="option-note">Play for 30 minutes on Wenrui's iPad in his room to unlock</div>
+                        </div>
+                        <div class="option-arrow">→</div>
+                    </div>
+
+                    <div class="option option-2" id="option2">
+                        <div class="option-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="option-content">
+                            <div class="option-text">1 Hour of Skating Office</div>
+                            <div class="option-note">Complete 1 hour of office work with Wenrui in his room</div>
+                        </div>
+                        <div class="option-arrow">→</div>
+                    </div>
+                </div>
             </div>
-            <div class="instructions-text">
-                This iPhone is locked with Screen Time restrictions. To unlock, you must complete <span style="color: #5ac8fa; font-weight: 700;">ONE</span> of the following options:
+
+            <!-- Final Instructions -->
+            <div class="final-instructions">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="final-text">
+                    After completing either task, ask <strong>Wenrui</strong> to verify and unlock your device.
+                </span>
             </div>
             
-            <!-- Unlock Options -->
-            <div class="unlock-options">
-                <div class="option option-1" id="option1">
-                    <div class="option-icon">
-                        <i class="fas fa-gamepad"></i>
-                    </div>
-                    <div class="option-content">
-                        <div class="option-text">Play The Strongest Battlegrounds</div>
-                        <div class="option-note">Play for 30 minutes on Wenrui's iPad in his room to unlock</div>
-                    </div>
-                    <div class="option-arrow">→</div>
-                </div>
-
-                <div class="option option-2" id="option2">
-                    <div class="option-icon">
-                        <i class="fas fa-briefcase"></i>
-                    </div>
-                    <div class="option-content">
-                        <div class="option-text">1 Hour of Skating Office</div>
-                        <div class="option-note">Complete 1 hour of office work with Wenrui in his room</div>
-                    </div>
-                    <div class="option-arrow">→</div>
-                </div>
-            </div>
+            <!-- Spacer for bottom buttons -->
+            <div style="height: 20px;"></div>
         </div>
+    </div>
 
-        <!-- Final Instructions -->
-        <div class="final-instructions">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span class="final-text">
-                After completing either task, ask <strong>Wenrui</strong> to verify and unlock your device.
-            </span>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="action-btn ask-btn" id="askBtn">
-                <i class="fas fa-comment-alt"></i> Ask Wenrui
-            </button>
-            <button class="action-btn more-info-btn" id="infoBtn">
-                <i class="fas fa-question-circle"></i> More Info
-            </button>
-        </div>
+    <!-- Fixed Action Buttons -->
+    <div class="action-buttons">
+        <button class="action-btn ask-btn" id="askBtn">
+            <i class="fas fa-comment-alt"></i> Ask Wenrui
+        </button>
+        <button class="action-btn more-info-btn" id="infoBtn">
+            <i class="fas fa-question-circle"></i> More Info
+        </button>
     </div>
 
     <script>
@@ -527,13 +576,6 @@
             
             updateTime();
             setInterval(updateTime, 60000);
-            
-            // Prevent bounce effect on iOS
-            document.body.addEventListener('touchmove', function(e) {
-                if (e.target.closest('.screen-time-container')) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
             
             // Add haptic feedback simulation
             function simulateHaptic() {
@@ -663,21 +705,23 @@
                 setTimeout(() => lockIcon.classList.remove('pulse'), 2000);
             }, 15000);
             
-            // iOS scroll momentum
-            const container = document.querySelector('.screen-time-container');
-            let startY, startTime;
+            // Fix iOS scroll momentum
+            const scrollContainer = document.querySelector('.scroll-container');
+            let startY = 0;
             
-            container.addEventListener('touchstart', function(e) {
+            scrollContainer.addEventListener('touchstart', function(e) {
                 startY = e.touches[0].pageY;
-                startTime = Date.now();
-            });
+            }, { passive: true });
             
-            container.addEventListener('touchmove', function(e) {
-                if (this.scrollTop === 0 && e.touches[0].pageY > startY) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+            // Enable scroll on all touch devices
+            scrollContainer.style.overflowY = 'auto';
+            scrollContainer.style.webkitOverflowScrolling = 'touch';
         });
+        
+        // Ensure iOS elastic scroll works
+        document.body.addEventListener('touchmove', function(e) {
+            // Allow default touch behavior for scrolling
+        }, { passive: true });
     </script>
 </body>
 </html>
